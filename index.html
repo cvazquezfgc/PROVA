@@ -76,6 +76,11 @@
             <tr><td>LINIA</td><td id="info-linia"></td></tr>
             <tr><td>TRAM</td><td id="info-tram"></td></tr>
             <tr><td>VIA</td><td id="info-via"></td></tr>
+            <tr><td>TIPUS CARRIL</td><td id="info-tipus-carril"></td></tr>
+            <tr><td>ANY CARRIL</td><td id="info-any-carril"></td></tr>
+            <tr><td>TRAVESSES</td><td id="info-travesses"></td></tr>
+            <tr><td>ANY TRAVESSES</td><td id="info-any-travesses"></td></tr>
+            <tr><td>PLATAFORMA</td><td id="info-plataforma"></td></tr>
         </table>
     </div>
     <div class="control-icon" id="layer-control" title="Capas Base">
@@ -349,6 +354,18 @@
                     document.getElementById('info-linia').textContent = properties.LINIA || '';
                     document.getElementById('info-tram').textContent = properties.TRAM || '';
                     document.getElementById('info-via').textContent = properties.VIA || '';
+
+                    // Genera valores aleatorios para los campos adicionales
+                    document.getElementById('info-tipus-carril').textContent = Math.random() < 0.95 ? 'UIC 54' : 'UIC 60';
+                    document.getElementById('info-any-carril').textContent = Math.floor(Math.random() * (2023 - 1972 + 1)) + 1972;
+
+                    // TRAVESSES aleatorio entre Formigó, Fusta y en blanco
+                    const travessesOptions = ['Formigó', 'Fusta', ''];
+                    document.getElementById('info-travesses').textContent = travessesOptions[Math.floor(Math.random() * travessesOptions.length)];
+                    document.getElementById('info-any-travesses').textContent = Math.floor(Math.random() * (2023 - 1972 + 1)) + 1972;
+
+                    // PLATAFORMA con un 20% de probabilidades de ser 'Via formigonada' y 80% 'Balast'
+                    document.getElementById('info-plataforma').textContent = Math.random() < 0.2 ? 'Via formigonada' : 'Balast';
                 }
             })
             .catch(error => console.log(error));
