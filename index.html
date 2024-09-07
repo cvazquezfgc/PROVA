@@ -209,13 +209,14 @@
                             var nearestPoint = turf.nearestPointOnLine(line, point);
                             var distance = turf.distance(point, nearestPoint, { units: 'meters' });
 
-                            // Define un radio de proximidad (en metros)
-                            var proximityRadius = 50; // Ajusta el radio según sea necesario
+                            // Define un radio de proximidad mayor (en metros) para activar el marcador antes
+                            var proximityRadius = 100; // Ajusta el radio según sea necesario
 
                             // Muestra el marcador y el texto solo si el cursor está dentro del radio de proximidad
                             if (distance <= proximityRadius) {
                                 var latlngNearest = L.latLng(nearestPoint.geometry.coordinates[1], nearestPoint.geometry.coordinates[0]);
 
+                                // Crear o actualizar el marcador con un movimiento suave
                                 if (!cursorMarker) {
                                     cursorMarker = L.circleMarker(latlngNearest, {
                                         radius: 6,
@@ -231,19 +232,19 @@
                                 var endPoint = turf.point(layer.feature.geometry.coordinates[layer.feature.geometry.coordinates.length - 1]);
                                 var distanceToEnd = turf.length(turf.lineSlice(nearestPoint, endPoint, line), { units: 'meters' });
 
-                                // Añade o actualiza el texto de distancia al marcador
+                                // Añade o actualiza el texto de distancia al marcador, negro y en negrita
                                 if (!labelMarker) {
                                     labelMarker = L.marker(latlngNearest, {
                                         icon: L.divIcon({
                                             className: 'label',
-                                            html: `<div style="background:white; padding:2px; border-radius:3px; border: 1px solid black; color: yellow;">
+                                            html: `<div style="color: black; font-weight: bold;">
                                                    ${distanceToEnd.toFixed(2)} m</div>`,
                                             iconAnchor: [0, 0]
                                         })
                                     }).addTo(map);
                                 } else {
                                     labelMarker.setLatLng(latlngNearest);
-                                    labelMarker._icon.innerHTML = `<div style="background:white; padding:2px; border-radius:3px; border: 1px solid black; color: yellow;">
+                                    labelMarker._icon.innerHTML = `<div style="color: black; font-weight: bold;">
                                                                    ${distanceToEnd.toFixed(2)} m</div>`;
                                 }
                             } else {
