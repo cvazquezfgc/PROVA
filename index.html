@@ -198,78 +198,61 @@
                     onEachFeature: function (feature, layer) {
                         linias.add(feature.properties.LINIA);
                         layer.on('mousemove', function (e) {
-                            // Calcula la distancia desde el cursor a la línea usando turf.js
-                            var point = turf.point([e.latlng.lng, e.latlng.lat]);
-                            var line = turf.lineString(layer.feature.geometry.coordinates);
-                            var nearestPoint = turf.nearestPointOnLine(line, point);
-                            var distance = turf.distance(point, nearestPoint, { units: 'meters' });
+    // Calcula la distancia desde el cursor a la línea usando turf.js
+    var point = turf.point([e.latlng.lng, e.latlng.lat]);
+    var line = turf.lineString(layer.feature.geometry.coordinates);
+    var nearestPoint = turf.nearestPointOnLine(line, point);
+    var distance = turf.distance(point, nearestPoint, { units: 'meters' });
 
-                            // Define un radio de proximidad (en metros)
-                            var proximityRadius = 10; // Ajusta el radio según sea necesario
+    // Define un radio de proximidad (en metros)
+    var proximityRadius = 50; // Ajusta el radio según sea necesario
 
-                            // Muestra el marcador y el texto solo si el cursor está dentro del radio de proximidad
-                            if (distance <= proximityRadius) {
-                                if (!cursorMarker) {
-                                    cursorMarker = L.circleMarker(nearestPoint.geometry.coordinates.reverse(), {
-                                        radius: 6,
-                                        color: '#97d700', // Verde FGC
-                                        fillOpacity: 0.8,
-                                        weight: 2
-                                    }).addTo(map);
-                                } else {
-                                    cursorMarker.setLatLng(nearestPoint.geometry.coordinates.reverse());
-                                }
+    // Muestra el marcador y el texto solo si el cursor está dentro del radio de proximidad
+    if (distance <= proximityRadius) {
+        var latlngNearest = L.latLng(nearestPoint.geometry.coordinates[1], nearestPoint.geometry.coordinates[0]);
 
-                                // Calcula la distancia desde el cursor hasta el extremo del elemento
-                                var endPoint = turf.point(layer.feature.geometry.coordinates[layer.feature.geometry.coordinates.length - 1]);
-                                var distanceToEnd = turf.length(turf.lineSlice(point, endPoint, line), { units: 'meters' });
+        if (!cursorMarker) {
+            cursorMarker = L.circleMarker(latlngNearest, {
+                radius: 6,
+                color: '#97d700', // Verde FGC
+                fillOpacity: 0.8,
+                weight: 2
+            }).addTo(map);
+        } else {
+            cursorMarker.setLatLng(latlngNearest);
+        }
 
-                                if (!labelMarker) {
-                                    labelMarker = L.marker(nearestPoint.geometry.coordinates.reverse(), {
-                                        icon: L.divIcon({
-                                            className: 'label',
-                                            html: `<div style="background:white; padding:2px; border-radius:3px; border: 1px solid black; color: yellow;">
-                                                   ${distanceToEnd.toFixed(2)} m</div>`,
-                                            iconAnchor: [0, 0]
-                                        })
-                                    }).addTo(map);
-                                } else {
-                                    labelMarker.setLatLng(nearestPoint.geometry.coordinates.reverse());
-                                    labelMarker._icon.innerHTML = `<div style="background:white; padding:2px; border-radius:3px; border: 1px solid black; color: yellow;">
-                                                                   ${distanceToEnd.toFixed(2)} m</div>`;
-                                }
-                            } else {
-                                if (cursorMarker) {
-                                    map.removeLayer(cursorMarker);
-                                    cursorMarker = null;
-                                }
-                                if (labelMarker) {
-                                    map.removeLayer(labelMarker);
-                                    labelMarker = null;
-                                }
-                            }
-                        });
-                        layer.on('click', function (e) {
-                            if (selectedFeature) {
-                                selectedFeature.setStyle({ color: '#555555' });
-                            }
-                            selectedFeature = layer;
-                            layer.setStyle({ color: 'yellow' });
-                            updateInfo(feature.properties);
-                        });
-                    }
-                }).addTo(map);
-                map.on('mouseout', function () {
-                    if (cursorMarker) {
-                        map.removeLayer(cursorMarker);
-                        cursorMarker = null;
-                    }
-                    if (labelMarker) {
-                        map.removeLayer(labelMarker);
-                        labelMarker = null;
-                    }
-                });
+        // Calcula la distancia desde el cursor hasta el extremo del elemento
+        var endPoint = turf.point(layer.feature.geometry.coordinates[layer.feature.geometry.coordinates.length - 1]);
+        var distanceToEnd = turf.length(turf.lineSlice(nearestPoint, endPoint, line), { units: 'meters' });
 
+        // Añade o actualiza el texto de distancia al marcador
+        if (!labelMarker) {
+            labelMarker = L.marker(latlngNearest, {
+                icon: L.divIcon({
+                    className: 'label',
+                    html: `<div style="background:white; padding:2px; border-radius:3px; border: 1px solid black; color: yellow;">
+                           ${distanceToEnd.toFixed(2)} m</div>`,
+                    iconAnchor: [0, 0]
+                })
+            }).addTo(map);
+        } else {
+            labelMarker.setLatLng(latlngNearest);
+            labelMarker._icon.innerHTML = `<div style="background:white; padding:2px; border-radius:3px; border: 1px solid black; color: yellow;">
+                                           ${distanceToEnd.toFixed(2)} m</div>`;
+        }
+    } else {
+        // Oculta el marcador y el texto cuando el cursor está fuera del radio de proximidad
+        if (cursorMarker) {
+            map.removeLayer(cursorMarker);
+            cursorMarker = null;
+        }
+        if (labelMarker) {
+            map.removeLayer(labelMarker);
+            labelMarker = null;
+        }
+    }
+});
                 var filterPanel = document.getElementById('filter-panel');
                 linias.forEach(function(linia) {
                     var checkbox = document.createElement('input');
