@@ -136,7 +136,6 @@
         });
 
         var geojsonLayer, selectedFeature, cursorMarker, labelMarker;
-        var trainMarkers = [];
 
         function togglePanel(panelId) {
             var panel = document.getElementById(panelId);
@@ -204,16 +203,20 @@
                     onEachFeature: function (feature, layer) {
                         linias.add(feature.properties.LINIA);
                         layer.on('mousemove', function (e) {
+                            // Calcula la distancia desde el cursor a la línea usando turf.js
                             var point = turf.point([e.latlng.lng, e.latlng.lat]);
                             var line = turf.lineString(layer.feature.geometry.coordinates);
                             var nearestPoint = turf.nearestPointOnLine(line, point);
                             var distance = turf.distance(point, nearestPoint, { units: 'meters' });
 
+                            // Define un radio de proximidad mayor (en metros) para activar el marcador antes
                             var proximityRadius = 100; // Ajusta el radio según sea necesario
 
+                            // Muestra el marcador y el texto solo si el cursor está dentro del radio de proximidad
                             if (distance <= proximityRadius) {
                                 var latlngNearest = L.latLng(nearestPoint.geometry.coordinates[1], nearestPoint.geometry.coordinates[0]);
 
+                                // Crear o actualizar el marcador con un movimiento suave
                                 if (!cursorMarker) {
                                     cursorMarker = L.circleMarker(latlngNearest, {
                                         radius: 6,
@@ -225,9 +228,11 @@
                                     cursorMarker.setLatLng(latlngNearest);
                                 }
 
+                                // Calcula la distancia desde el cursor hasta el extremo del elemento
                                 var endPoint = turf.point(layer.feature.geometry.coordinates[layer.feature.geometry.coordinates.length - 1]);
                                 var distanceToEnd = turf.length(turf.lineSlice(nearestPoint, endPoint, line), { units: 'meters' });
 
+                                // Añade o actualiza el texto de distancia al marcador, negro y en negrita
                                 if (!labelMarker) {
                                     labelMarker = L.marker(latlngNearest, {
                                         icon: L.divIcon({
@@ -243,6 +248,7 @@
                                                                    ${distanceToEnd.toFixed(2)} m</div>`;
                                 }
                             } else {
+                                // Oculta el marcador y el texto cuando el cursor está fuera del radio de proximidad
                                 if (cursorMarker) {
                                     map.removeLayer(cursorMarker);
                                     cursorMarker = null;
@@ -350,63 +356,20 @@
                     document.getElementById('info-tram').textContent = properties.TRAM || '';
                     document.getElementById('info-via').textContent = properties.VIA || '';
 
+                    // Genera valores aleatorios para los campos adicionales
                     document.getElementById('info-tipus-carril').textContent = Math.random() < 0.95 ? 'UIC 54' : 'UIC 60';
                     document.getElementById('info-any-carril').textContent = Math.floor(Math.random() * (2023 - 1972 + 1)) + 1972;
 
+                    // TRAVESSES aleatorio entre Formigó, Fusta y en blanco
                     const travessesOptions = ['Formigó', 'Fusta', ''];
                     document.getElementById('info-travesses').textContent = travessesOptions[Math.floor(Math.random() * travessesOptions.length)];
                     document.getElementById('info-any-travesses').textContent = Math.floor(Math.random() * (2023 - 1972 + 1)) + 1972;
 
+                    // PLATAFORMA con un 20% de probabilidades de ser 'Via formigonada' y 80% 'Balast'
                     document.getElementById('info-plataforma').textContent = Math.random() < 0.2 ? 'Via formigonada' : 'Balast';
                 }
             })
             .catch(error => console.log(error));
-
-        // Función para obtener los datos de la API y actualizar los trenes en el mapa
-        async function updateTrainPositions() {
-            try {
-                const response = await fetch('https://dadesobertes.fgc.cat/api/records/1.0/search/?dataset=posicionament-dels-trens&rows=100');
-                const data = await response.json();
-
-                // Limpia los marcadores existentes de trenes
-                if (typeof trainMarkers !== 'undefined') {
-                    trainMarkers.forEach(marker => map.removeLayer(marker));
-                }
-                trainMarkers = [];
-
-                // Añade los trenes al mapa
-                data.records.forEach(record => {
-                    const { fields } = record;
-                    const lat = fields.latitud;
-                    const lng = fields.longi...
-                    const occupancy = fields.ocupacio; // Campo de ocupación
-
-                    // Crea un marcador de tren con un icono personalizado
-                    const trainIcon = L.divIcon({
-                        html: `<i class="fas fa-train" style="color: ${getOccupancyColor(occupancy)};"></i>`,
-                        iconSize: [20, 20]
-                    });
-
-                    const trainMarker = L.marker([lat, lng], { icon: trainIcon }).addTo(map);
-                    trainMarkers.push(trainMarker);
-                });
-            } catch (error) {
-                console.error('Error al obtener los datos de la API:', error);
-            }
-        }
-
-        // Función para determinar el color del icono según la ocupación
-        function getOccupancyColor(occupancy) {
-            if (occupancy === 'baja') return 'green';
-            if (occupancy === 'media') return 'yellow';
-            return 'red'; // alta ocupación
-        }
-
-        // Actualiza la posición de los trenes cada 10 segundos
-        setInterval(updateTrainPositions, 10000);
-
-        // Llama a la función para la primera carga
-        updateTrainPositions();
     </script>
 </body>
 </html>
