@@ -201,14 +201,17 @@
                     },
                     onEachFeature: function (feature, layer) {
                         linias.add(feature.properties.LINIA);
-                        layer.on('mousemove', function (e) {
+                        
+                        // Añadimos un evento global al mapa para detectar la proximidad al mover el ratón
+                        map.on('mousemove', function (e) {
                             var point = turf.point([e.latlng.lng, e.latlng.lat]);
                             var line = turf.lineString(layer.feature.geometry.coordinates);
                             var nearestPoint = turf.nearestPointOnLine(line, point);
                             var distance = turf.distance(point, nearestPoint, { units: 'meters' });
 
-                            var proximityRadius = 200; // Aumentar radio de proximidad a 200 metros
+                            var proximityRadius = 100; // Define el radio de proximidad en metros
 
+                            // Mostrar marcador y texto si el cursor está dentro del radio de proximidad
                             if (distance <= proximityRadius) {
                                 var latlngNearest = L.latLng(nearestPoint.geometry.coordinates[1], nearestPoint.geometry.coordinates[0]);
 
@@ -223,6 +226,7 @@
                                     cursorMarker.setLatLng(latlngNearest);
                                 }
 
+                                // Calcula la distancia desde el cursor hasta el extremo del elemento
                                 var endPoint = turf.point(layer.feature.geometry.coordinates[layer.feature.geometry.coordinates.length - 1]);
                                 var distanceToEnd = turf.length(turf.lineSlice(nearestPoint, endPoint, line), { units: 'meters' });
 
@@ -240,9 +244,8 @@
                                     labelMarker._icon.innerHTML = `<div style="color: black; font-weight: bold;">
                                                                    ${distanceToEnd.toFixed(2)} m</div>`;
                                 }
-
-                                updateInfo(feature.properties);
                             } else {
+                                // Ocultar marcador y texto si el cursor está fuera del radio de proximidad
                                 if (cursorMarker) {
                                     map.removeLayer(cursorMarker);
                                     cursorMarker = null;
@@ -253,6 +256,7 @@
                                 }
                             }
                         });
+
                         layer.on('click', function (e) {
                             if (selectedFeature) {
                                 selectedFeature.setStyle({ color: '#555555' });
@@ -263,17 +267,6 @@
                         });
                     }
                 }).addTo(map);
-
-                map.on('mouseout', function () {
-                    if (cursorMarker) {
-                        map.removeLayer(cursorMarker);
-                        cursorMarker = null;
-                    }
-                    if (labelMarker) {
-                        map.removeLayer(labelMarker);
-                        labelMarker = null;
-                    }
-                });
 
                 var filterPanel = document.getElementById('filter-panel');
                 linias.forEach(function(linia) {
@@ -309,31 +302,54 @@
                             return checkedLinias.has(feature.properties.LINIA);
                         },
                         onEachFeature: function (feature, layer) {
-                            layer.on('mousemove', function (e) {
-                                if (!cursorMarker) {
-                                    cursorMarker = L.circleMarker(e.latlng, {
-                                        radius: 6,
-                                        color: '#97d700',
-                                        fillOpacity: 0.8,
-                                        weight: 2
-                                    }).addTo(map);
+                            // Se mantiene la lógica de mousemove global para detectar proximidad
+                            map.on('mousemove', function (e) {
+                                var point = turf.point([e.latlng.lng, e.latlng.lat]);
+                                var line = turf.lineString(layer.feature.geometry.coordinates);
+                                var nearestPoint = turf.nearestPointOnLine(line, point);
+                                var distance = turf.distance(point, nearestPoint, { units: 'meters' });
+
+                                var proximityRadius = 100; // Ajusta el radio según sea necesario
+
+                                if (distance <= proximityRadius) {
+                                    var latlngNearest = L.latLng(nearestPoint.geometry.coordinates[1], nearestPoint.geometry.coordinates[0]);
+
+                                    if (!cursorMarker) {
+                                        cursorMarker = L.circleMarker(latlngNearest, {
+                                            radius: 6,
+                                            color: '#97d700',
+                                            fillOpacity: 0.8,
+                                            weight: 2
+                                        }).addTo(map);
+                                    } else {
+                                        cursorMarker.setLatLng(latlngNearest);
+                                    }
+
+                                    if (!labelMarker) {
+                                        labelMarker = L.marker(latlngNearest, {
+                                            icon: L.divIcon({
+                                                className: 'label',
+                                                html: '<div style="background:white; padding:2px; border-radius:3px;">' + feature.properties.full_id + '</div>',
+                                                iconAnchor: [0, 0]
+                                            })
+                                        }).addTo(map);
+                                    } else {
+                                        labelMarker.setLatLng(latlngNearest);
+                                        labelMarker._icon.innerHTML = '<div style="background:white; padding:2px; border-radius:3px;">' + feature.properties.full_id + '</div>';
+                                    }
+                                    updateInfo(feature.properties);
                                 } else {
-                                    cursorMarker.setLatLng(e.latlng);
+                                    if (cursorMarker) {
+                                        map.removeLayer(cursorMarker);
+                                        cursorMarker = null;
+                                    }
+                                    if (labelMarker) {
+                                        map.removeLayer(labelMarker);
+                                        labelMarker = null;
+                                    }
                                 }
-                                if (!labelMarker) {
-                                    labelMarker = L.marker(e.latlng, {
-                                        icon: L.divIcon({
-                                            className: 'label',
-                                            html: '<div style="background:white; padding:2px; border-radius:3px;">' + feature.properties.full_id + '</div>',
-                                            iconAnchor: [0, 0]
-                                        })
-                                    }).addTo(map);
-                                } else {
-                                    labelMarker.setLatLng(e.latlng);
-                                    labelMarker._icon.innerHTML = '<div style="background:white; padding:2px; border-radius:3px;">' + feature.properties.full_id + '</div>';
-                                }
-                                updateInfo(feature.properties);
                             });
+
                             layer.on('click', function (e) {
                                 if (selectedFeature) {
                                     selectedFeature.setStyle({ color: '#555555' });
