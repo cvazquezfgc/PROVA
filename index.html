@@ -207,7 +207,7 @@
                             var nearestPoint = turf.nearestPointOnLine(line, point);
                             var distance = turf.distance(point, nearestPoint, { units: 'meters' });
 
-                            var proximityRadius = 100; // Radio de proximidad en metros
+                            var proximityRadius = 200; // Aumentar radio de proximidad a 200 metros
 
                             if (distance <= proximityRadius) {
                                 var latlngNearest = L.latLng(nearestPoint.geometry.coordinates[1], nearestPoint.geometry.coordinates[0]);
